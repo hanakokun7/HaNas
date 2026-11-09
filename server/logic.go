@@ -896,7 +896,7 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Account deleted"))
 }
 
-func sagasu(w http.ResponseWriter, r *http.Request) {
+func sagasu(w http.ResponseWriter, r *http.Request) { // 未完成
 	userID, err := getUserIDFromRequest(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
