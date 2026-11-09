@@ -62,7 +62,7 @@ func main() {
 	http.HandleFunc("/share/delete", authMiddleware(DeleteShare))
 	http.HandleFunc("/s/", GetSharedFile)
 	http.HandleFunc("/delete-account", authMiddleware(DeleteAccount))
-	http.HandlerFunc("/search", authMiddleware(sagasu))
+	http.HandlerFunc("/search", authMiddleware(sagasu))  //未完成
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte(indexHtmlContent))
