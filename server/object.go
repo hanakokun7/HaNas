@@ -87,7 +87,7 @@ func (n Node) return_file() []byte {
 }
 
 type Trash struct {
-	Nid       uint      `gorm:"not null" json:"nid"`
+	Nid       uint      `gorm:"primaryKey" json:"nid"`
 	DeletedAt time.Time `gorm:"autoUpdateTime" json:"deleted_at"`
 }
 

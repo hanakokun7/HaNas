@@ -286,6 +286,8 @@ func DeleteNodeRecursive(id uint, userID uint) error {
 		thumbPath := fmt.Sprintf("%s/%d.jpg", thumbDir, *n.Fid)
 		_ = os.Remove(thumbPath)
 	}
+	var s Share
+	db.Where("node_id = ?", n.ID).Delete(&s) // 新しい削除に移動
 	result := db.Delete(&n)
 	if result.Error != nil {
 		return result.Error
@@ -303,20 +305,6 @@ func RenameNode(src Node, newName string) error {
 	src.Name = newName
 	result := db.Save(&src)
 	return result.Error
-}
-
-func DeleteNode(src Node) error {
-	result := db.Delete(&src)
-	success := result.Error == nil && result.RowsAffected > 0
-	if !success {
-		return fmt.Errorf("delete failed")
-	}
-	fid := src.Fid
-	if fid != nil {
-		p := dataDir + "/" + fmt.Sprintf("%d", *fid)
-		_ = os.Remove(p)
-	}
-	return nil
 }
 
 func calculateDirSize(nodeID uint, userID uint) int64 {
@@ -417,14 +405,16 @@ func generateShareToken() string {
 }
 
 func gomikago_akeru() {
-	time.Sleep(5 * time.Minute)
-	var tmp []Trash
-	db.Find(&tmp)
-	l := len(tmp)
-	ct := time.Now()
-	for i := 0; i < l; i++ {
-		if (ct.Sub(tmp[i].DeletedAt)) > 30*24*time.Hour {
-			tmp[i].delete()
+	for true {
+		time.Sleep(5 * time.Minute)
+		var tmp []Trash
+		db.Find(&tmp)
+		l := len(tmp)
+		ct := time.Now()
+		for i := 0; i < l; i++ {
+			if (ct.Sub(tmp[i].DeletedAt)) > 30*24*time.Hour {
+				tmp[i].delete()
+			}
 		}
 	}
 }

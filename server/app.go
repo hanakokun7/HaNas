@@ -41,7 +41,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	db.AutoMigrate(&Config{}, &User{}, &Node{}, &Share{})
+	db.AutoMigrate(&Config{}, &User{}, &Node{}, &Share{}, &Trash{})
 	if err := initJWTSecret(); err != nil {
 		panic(err)
 	}
