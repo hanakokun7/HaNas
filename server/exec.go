@@ -64,7 +64,7 @@ func generateToken(userID uint, username string) (string, error) {
 	return token.SignedString([]byte(jwtSecret))
 }
 
-func search(t string, u uint) []Node {
+func SearchNode(t string, u uint) []Node {
 	var tmp []Node
 	db.Where("Username = ? AND Name LIKE ?", u, "%"+t+"%").Find(&tmp)
 	return tmp

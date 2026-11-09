@@ -896,12 +896,23 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Account deleted"))
 }
 
-func sagasu(w http.ResponseWriter, r *http.Request) { // 未完成
+func search(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserIDFromRequest(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	keyword := r.URL.Query().Get("keyword")
-	results := search(keyword, userID)
+	results_ := SearchNode(keyword, userID)
+	var results []byte
+	if results_ == nil {
+		results_ = []Node{}
+	}
+	results, _ = json.Marshal(results_)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(results)
 }
