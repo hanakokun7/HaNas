@@ -72,7 +72,7 @@ func GetJson(w http.ResponseWriter, r *http.Request) {
 		if err != nil || id <= 0 {
 			node = return_root(userID)
 		} else {
-			db.Preload("Ko").First(&node, "id = ? AND user_id = ?", id, userID)
+			db.Preload("Ko", "del_f = ?", false).First(&node, "id = ? AND user_id = ? AND del_f = ?", id, userID, false)
 		}
 	}
 	buildPath := func(n Node) string {

@@ -69,7 +69,7 @@ type Node struct {
 	Size       int64     `gorm:"-" json:"size,omitempty"`
 	Path       string    `gorm:"-" json:"path,omitempty"`
 	ShareToken string    `gorm:"-" json:"share_token,omitempty"`
-	Del_F      bool      `gorm:"not null;default:false" json:"-"`
+	Del_f      bool      `gorm:"not null;default:false" json:"-"`
 }
 
 func (n Node) to_json() []byte {
@@ -100,7 +100,7 @@ func (t Trash) getInfo() []byte {
 func (t Trash) restore() {
 	var tmp Node
 	db.Preload("Ko").First(&tmp, "id = ?", t.Nid)
-	tmp.Del_F = false
+	tmp.Del_f = false
 	r := db.Save(&tmp)
 	if r.Error == nil {
 		db.Delete(&t)
