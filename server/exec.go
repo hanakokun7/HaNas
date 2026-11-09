@@ -64,6 +64,12 @@ func generateToken(userID uint, username string) (string, error) {
 	return token.SignedString([]byte(jwtSecret))
 }
 
+func return_root(userID uint) Node {
+	var root Node
+	db.Preload("Ko").First(&root, "oya_id IS NULL AND user_id = ?", userID)
+	return root
+}
+
 func SearchNode(t string, u uint) []Node {
 	var tmp []Node
 	db.Where("Username = ? AND Name LIKE ?", u, "%"+t+"%").Find(&tmp)
@@ -408,4 +414,17 @@ func generateShareToken() string {
 		b[i] = byte(mrand.Intn(256))
 	}
 	return base64.URLEncoding.EncodeToString(b)
+}
+
+func gomikago_akeru() {
+	time.Sleep(5 * time.Minute)
+	var tmp []Trash
+	db.Find(&tmp)
+	l := len(tmp)
+	ct := time.Now()
+	for i := 0; i < l; i++ {
+		if (ct.Sub(tmp[i].DeletedAt)) > 30*24*time.Hour {
+			tmp[i].delete()
+		}
+	}
 }

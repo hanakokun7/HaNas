@@ -45,6 +45,7 @@ func main() {
 	if err := initJWTSecret(); err != nil {
 		panic(err)
 	}
+	go gomikago_akeru()
 	http.HandleFunc("/register", Register)
 	http.HandleFunc("/login", Login)
 	http.HandleFunc("/logout", Logout)
