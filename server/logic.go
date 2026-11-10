@@ -601,6 +601,10 @@ func DlFile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"success":true}`))
 }
 
+func RealDlFile(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func Register(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Username string `json:"username"`

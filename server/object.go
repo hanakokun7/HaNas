@@ -113,4 +113,5 @@ func (t Trash) delete() {
 	if DeleteNodeRecursive(tmp.ID, tmp.UserID) == nil {
 		db.Delete(&t)
 	}
+	atotrash()
 }

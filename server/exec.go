@@ -286,8 +286,6 @@ func DeleteNodeRecursive(id uint, userID uint) error {
 		thumbPath := fmt.Sprintf("%s/%d.jpg", thumbDir, *n.Fid)
 		_ = os.Remove(thumbPath)
 	}
-	var s Share
-	db.Where("node_id = ?", n.ID).Delete(&s) // 新しい削除に移動
 	result := db.Delete(&n)
 	if result.Error != nil {
 		return result.Error
@@ -404,6 +402,28 @@ func generateShareToken() string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
+func tDelete(id uint, userID uint) error {
+	var n Node
+	if err := db.Preload("Ko").First(&n, "id = ? AND user_id = ?", id, userID).Error; err != nil {
+		return err
+	}
+	for _, c := range n.Ko {
+		_ = tDelete(c.ID, userID)
+	}
+	var s Share
+	db.Where("node_id = ?", n.ID).Delete(&s)
+	n.Del_f = true
+	result := db.Save(&n)
+	var t Trash
+	t.Nid = n.ID
+	t.DeletedAt = time.Now()
+	db.Save(&t)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
 func gomikago_akeru() {
 	for true {
 		time.Sleep(5 * time.Minute)
@@ -415,6 +435,19 @@ func gomikago_akeru() {
 			if (ct.Sub(tmp[i].DeletedAt)) > 30*24*time.Hour {
 				tmp[i].delete()
 			}
+		}
+	}
+}
+
+func atotrash() { //これ削除して再帰削除でTrash削除
+	var tmp []Trash
+	db.Find(&tmp)
+	l := len(tmp)
+	for i := 0; i < l; i++ {
+		var t Node
+		db.Preload("Ko").First(&t, "id = ?", tmp[i].Nid)
+		if t.ID != tmp[i].Nid {
+			db.Delete(&tmp[i])
 		}
 	}
 }
