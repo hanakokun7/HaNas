@@ -290,6 +290,9 @@ func DeleteNodeRecursive(id uint, userID uint) error {
 	if result.Error != nil {
 		return result.Error
 	}
+	var trs Trash
+	db.First(&trs, "id = ? AND user_id = ?", id, userID)
+	db.Delete(&trs)
 	return nil
 }
 
