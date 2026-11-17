@@ -110,7 +110,7 @@ func (t Trash) restore() {
 
 func (t Trash) delete() {
 	var tmp Node
-	db.Preload("Ko").First(&tmp, "id = ?", t.Nid)
+	db.First(&tmp, "id = ?", t.Nid)
 	if DeleteNodeRecursive(tmp.ID, tmp.UserID) == nil {
 		db.Delete(&t)
 	}
