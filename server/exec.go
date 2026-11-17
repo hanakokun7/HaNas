@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -291,7 +292,9 @@ func DeleteNodeRecursive(id uint, userID uint) error {
 		return result.Error
 	}
 	var trs Trash
-	db.First(&trs, "id = ? AND user_id = ?", id, userID)
+	if err := db.First(&trs, "id = ? AND user_id = ?", id, userID).Error; err != nil {
+		return err
+	}
 	db.Delete(&trs)
 	return nil
 }
@@ -414,11 +417,15 @@ func tDelete(id uint, userID uint) error {
 		_ = tDelete(c.ID, userID)
 	}
 	var s Share
-	db.Where("node_id = ?", n.ID).Delete(&s)
+	if err := db.First(&s, "node_id = ?", n.ID).Error; err != nil {
+		return err
+	}
+	db.Delete(&s)
 	n.Del_f = true
 	result := db.Save(&n)
 	var t Trash
 	t.Nid = n.ID
+	t.UserID = userID
 	t.DeletedAt = time.Now()
 	db.Save(&t)
 	if result.Error != nil {
@@ -442,15 +449,22 @@ func gomikago_akeru() {
 	}
 }
 
-func atotrash() { //これ削除して再帰削除でTrash削除
-	var tmp []Trash
-	db.Find(&tmp)
-	l := len(tmp)
-	for i := 0; i < l; i++ {
-		var t Node
-		db.Preload("Ko").First(&t, "id = ?", tmp[i].Nid)
-		if t.ID != tmp[i].Nid {
-			db.Delete(&tmp[i])
-		}
+func return_path(n Node, userID uint) string {
+	if n.OyaID == nil {
+		return "/"
 	}
+	parts := []string{n.Name}
+	cur := n
+	for cur.OyaID != nil {
+		var parent Node
+		if err := db.First(&parent, "id = ? AND user_id = ?", *cur.OyaID, userID).Error; err != nil {
+			break
+		}
+		if parent.OyaID == nil {
+			break
+		}
+		parts = append([]string{parent.Name}, parts...)
+		cur = parent
+	}
+	return "/" + strings.Join(parts, "/")
 }

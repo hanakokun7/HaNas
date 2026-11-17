@@ -75,26 +75,7 @@ func GetJson(w http.ResponseWriter, r *http.Request) {
 			db.Preload("Ko", "del_f = ?", false).First(&node, "id = ? AND user_id = ? AND del_f = ?", id, userID, false)
 		}
 	}
-	buildPath := func(n Node) string {
-		if n.OyaID == nil {
-			return "/"
-		}
-		parts := []string{n.Name}
-		cur := n
-		for cur.OyaID != nil {
-			var parent Node
-			if err := db.First(&parent, "id = ? AND user_id = ?", *cur.OyaID, userID).Error; err != nil {
-				break
-			}
-			if parent.OyaID == nil {
-				break
-			}
-			parts = append([]string{parent.Name}, parts...)
-			cur = parent
-		}
-		return "/" + strings.Join(parts, "/")
-	}
-	node.Path = buildPath(node)
+	node.Path = return_path(node, userID)
 	if node.Fid != nil {
 		p := fmt.Sprintf("%s/%d", dataDir, *node.Fid)
 		if st, err := os.Stat(p); err == nil {
@@ -601,8 +582,30 @@ func DlFile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"success":true}`))
 }
 
-func RealDlFile(w http.ResponseWriter, r *http.Request) {
-
+func tDlFile(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromRequest(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var req struct {
+		SrcID uint `json:"src_id"`
+	}
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&req); err != nil {
+		http.Error(w, "invalid json: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if req.SrcID == 0 {
+		http.Error(w, "src_id required", http.StatusBadRequest)
+		return
+	}
+	if err := tDelete(req.SrcID, userID); err != nil {
+		http.Error(w, "delete failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"success":true}`))
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
@@ -912,11 +915,91 @@ func search(w http.ResponseWriter, r *http.Request) {
 	if results_ == nil {
 		results_ = []Node{}
 	}
-	results, _ = json.Marshal(results_)
+	results, err = json.Marshal(results_)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(results)
+}
+
+func get_trash_list(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromRequest(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var results_ []Trash
+	db.Where("user_id = ?", userID).Find(&results_)
+	var results []byte
+	if results_ == nil {
+		results_ = []Trash{}
+	}
+	results, err = json.Marshal(results_)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(results)
+}
+
+func get_trash_info(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromRequest(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	idStr := strings.TrimPrefix(r.URL.Path, "/trash/restore/")
+	id, _ := strconv.Atoi(idStr)
+	var t Trash
+	if err := db.First(&t, "id = ?", id).Error; err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	var n Node = t.getNode()
+	tif := struct {
+		Nid       uint      `json:"id"`
+		Name      string    `json:"name"`
+		IsDir     bool      `json:"is_dir"`
+		DeletedAt time.Time `json:"deleted_at"`
+		Size      int64     `json:"size,omitempty"`
+		Path      string    `json:"path,omitempty"`
+	}{}
+	tif.Nid = t.Nid
+	tif.Name = n.Name
+	tif.IsDir = n.IsDir
+	tif.DeletedAt = t.DeletedAt
+	if n.IsDir {
+		tif.Size = calculateDirSize(n.ID, userID)
+	} else {
+		if s, err := os.Stat(fmt.Sprintf("%s/%d", dataDir, *n.Fid)); err == nil {
+			tif.Size = s.Size()
+		}
+	}
+	tif.Path = return_path(n, userID) + n.Name
+	data, err := json.Marshal(tif)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
+
+func restore_trash(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromRequest(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	idStr := strings.TrimPrefix(r.URL.Path, "/trash/restore/")
+	id, _ := strconv.Atoi(idStr)
+	var t Trash
+	if err := db.First(&t, "id = ? AND user_id = ?", id, userID).Error; err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	t.restore()
 }

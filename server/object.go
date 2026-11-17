@@ -88,18 +88,19 @@ func (n Node) return_file() []byte {
 
 type Trash struct {
 	Nid       uint      `gorm:"primaryKey" json:"nid"`
+	UserID     uint     `gorm:"not null;index" json:"user_id"`
 	DeletedAt time.Time `gorm:"autoUpdateTime" json:"deleted_at"`
 }
 
-func (t Trash) getInfo() []byte {
+func (t Trash) getNode() Node {
 	var tmp Node
-	db.Preload("Ko").First(&tmp, "id = ?", t.Nid)
-	return tmp.to_json()
+	db.First(&tmp, "id = ?", t.Nid)
+	return tmp
 }
 
 func (t Trash) restore() {
 	var tmp Node
-	db.Preload("Ko").First(&tmp, "id = ?", t.Nid)
+	db.First(&tmp, "id = ?", t.Nid)
 	tmp.Del_f = false
 	r := db.Save(&tmp)
 	if r.Error == nil {
@@ -113,5 +114,4 @@ func (t Trash) delete() {
 	if DeleteNodeRecursive(tmp.ID, tmp.UserID) == nil {
 		db.Delete(&t)
 	}
-	atotrash()
 }
