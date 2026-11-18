@@ -21,10 +21,6 @@ var (
 		sync.RWMutex
 		m map[uint]*sync.RWMutex
 	}{m: make(map[uint]*sync.RWMutex)}
-	nodeLocks = struct {
-		sync.RWMutex
-		m map[uint]*sync.Mutex
-	}{m: make(map[uint]*sync.Mutex)}
 	uploadMutex    sync.Mutex
 	thumbnailMutex sync.Map
 )
@@ -88,7 +84,7 @@ func (n Node) return_file() []byte {
 
 type Trash struct {
 	Nid       uint      `gorm:"primaryKey" json:"nid"`
-	UserID     uint     `gorm:"not null;index" json:"user_id"`
+	UserID    uint      `gorm:"not null;index" json:"user_id"`
 	DeletedAt time.Time `gorm:"autoUpdateTime" json:"deleted_at"`
 }
 

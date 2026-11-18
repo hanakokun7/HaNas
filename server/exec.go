@@ -364,42 +364,6 @@ func extractVideoFrame(videoPath string) (image.Image, error) {
 	return img, nil
 }
 
-var progressChannels = struct {
-	sync.RWMutex
-	m map[string]chan int
-}{m: make(map[string]chan int)}
-
-type ProgressReader struct {
-	r        io.Reader
-	total    int64
-	read     int64
-	lastPct  int
-	uploadID string
-}
-
-func (pr *ProgressReader) Read(p []byte) (int, error) {
-	n, err := pr.r.Read(p)
-	if n > 0 {
-		pr.read += int64(n)
-		if pr.total > 0 && pr.uploadID != "" {
-			pct := int(float64(pr.read) * 100 / float64(pr.total))
-			if pct > pr.lastPct && pct < 100 {
-				pr.lastPct = pct
-				progressChannels.RLock()
-				ch, ok := progressChannels.m[pr.uploadID]
-				progressChannels.RUnlock()
-				if ok {
-					select {
-					case ch <- pct:
-					default:
-					}
-				}
-			}
-		}
-	}
-	return n, err
-}
-
 func generateShareToken() string {
 	b := make([]byte, 16)
 	for i := range b {

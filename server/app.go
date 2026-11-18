@@ -54,7 +54,6 @@ func main() {
 	http.HandleFunc("/thumbnail/", authMiddleware(GetThumbnail))
 	http.HandleFunc("/node/", authMiddleware(GetJson))
 	http.HandleFunc("/upload", authMiddleware(UpFile))
-	http.HandleFunc("/upload/progress", UploadProgressSSE)
 	http.HandleFunc("/copy", authMiddleware(CpFile))
 	http.HandleFunc("/move", authMiddleware(MvFile))
 	http.HandleFunc("/rename", authMiddleware(RnFile))
