@@ -381,10 +381,9 @@ func tDelete(id uint, userID uint) error {
 		_ = tDelete(c.ID, userID)
 	}
 	var s Share
-	if err := db.First(&s, "node_id = ?", n.ID).Error; err != nil {
-		return err
+	if err := db.First(&s, "node_id = ?", n.ID).Error; err == nil {
+		db.Delete(&s)
 	}
-	db.Delete(&s)
 	n.Del_f = true
 	result := db.Save(&n)
 	var t Trash
